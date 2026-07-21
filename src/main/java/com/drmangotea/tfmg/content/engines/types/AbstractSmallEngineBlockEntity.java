@@ -6,6 +6,8 @@ import com.drmangotea.tfmg.content.engines.base.EngineBlock;
 import com.drmangotea.tfmg.content.engines.base.EngineComponentsInventory;
 import com.drmangotea.tfmg.content.engines.base.EngineProperties;
 import com.drmangotea.tfmg.content.engines.engine_controller.EngineControllerBlockEntity;
+import com.drmangotea.tfmg.content.engines.types.radial_engine.RadialEngineBlockEntity;
+import com.drmangotea.tfmg.content.engines.types.turbine_engine.TurbineEngineBlockEntity;
 import com.drmangotea.tfmg.content.engines.upgrades.EnginePipingUpgrade;
 import com.drmangotea.tfmg.content.engines.upgrades.EngineUpgrade;
 import com.drmangotea.tfmg.content.engines.upgrades.TransmissionUpgrade;
@@ -210,7 +212,16 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
         if (!nextComponent().isEmpty())
             return false;
 
-        return super.canWork();
+        if (!super.canWork())
+            return false;
+
+        // Prevent the "free fuel" exploit: at a low enough fuel injection rate,
+        // getFuelConsumption() can round down to 0 while the engine still spins.
+        // Stall it instead of letting it run without consuming fuel.
+        if (rpm > 0 && getFuelConsumption() <= 0)
+            return false;
+
+        return true;
     }
 
     public Ingredient nextComponent() {
@@ -417,6 +428,8 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
             if (level.getBlockEntity(controller) instanceof AbstractSmallEngineBlockEntity be) {
 
                 int toDrain = Math.min(2000 - coolingFluid, itemStack.getOrCreateTag().getInt("amount"));
+                if (toDrain <= 0)
+                    return false;
                 itemStack.getOrCreateTag().putInt("amount", itemStack.getOrCreateTag().getInt("amount") - toDrain);
                 be.coolingFluid += toDrain;
                 level.playSound(null, getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1f, 1f);
@@ -426,6 +439,8 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
         if (itemStack.is(TFMGItems.OIL_CAN.get())) {
             if (level.getBlockEntity(controller) instanceof AbstractSmallEngineBlockEntity be) {
                 int toDrain = Math.min(2000 - oil, itemStack.getOrCreateTag().getInt("amount"));
+                if (toDrain <= 0)
+                    return false;
                 itemStack.getOrCreateTag().putInt("amount", itemStack.getOrCreateTag().getInt("amount") - toDrain);
                 be.oil += toDrain;
                 level.playSound(null, getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1f, 1f);
@@ -658,9 +673,22 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
     public void remove() {
         super.remove();
         updateOthers();
+
+        if (upgrade.isPresent()) {
+            dropItem(upgrade.get().getItem().getDefaultInstance());
+            upgrade = Optional.empty();
+        }
+
+        if (!(this instanceof RadialEngineBlockEntity) && !(this instanceof TurbineEngineBlockEntity)
+                && getBlockState().hasProperty(ENGINE_STATE)
+                && getBlockState().getValue(ENGINE_STATE) == SHAFT) {
+            dropItem(AllBlocks.SHAFT.asStack());
+        }
+
         for(int i =0;i<componentsInventory.getSlots();i++){
             ItemStack stack = componentsInventory.getItem(i);
-            dropItem(stack);
+            if (!stack.isEmpty())
+                dropItem(stack);
 
         }
     }
