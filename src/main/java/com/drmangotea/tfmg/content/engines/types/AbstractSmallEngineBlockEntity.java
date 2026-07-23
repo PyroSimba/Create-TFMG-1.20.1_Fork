@@ -305,20 +305,27 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
 
         List<Long> allEngines = new ArrayList<>(engines);
         allEngines.add(controller.asLong());
+
+        // A fully empty fuel tank matches no fuel tag below, so the loop that
+        // used to be the only place rpm/torque got reset to 0 would never run.
+        // Check canWork() up front so a dry tank always stalls the engine,
+        // instead of leaving rpm stuck at its last nonzero value (which kept
+        // producing exhaust and engine noise indefinitely).
+        if (!canWork()) {
+            allEngines.forEach(l -> {
+                BlockPos pos = BlockPos.of(l);
+                if (level.getBlockEntity(pos) instanceof AbstractEngineBlockEntity be) {
+                    be.rpm = 0;
+                    be.torque = 0;
+                    be.updateGeneratedRotation();
+                }
+
+            });
+            return;
+        }
+
         for (TagKey<Fluid> fluidTag : getSupportedFuels()) {
             if (fuelTank.getFluid().getFluid().is(fluidTag)) {
-                if (!canWork()) {
-                    allEngines.forEach(l -> {
-                        BlockPos pos = BlockPos.of(l);
-                        if (level.getBlockEntity(pos) instanceof AbstractEngineBlockEntity be) {
-                            be.rpm = 0;
-                            be.torque = 0;
-                            be.updateGeneratedRotation();
-                        }
-
-                    });
-                    return;
-                }
                 allEngines.forEach(l -> {
                     BlockPos pos = BlockPos.of(l);
                     if (level.getBlockEntity(pos) instanceof AbstractEngineBlockEntity be) {
