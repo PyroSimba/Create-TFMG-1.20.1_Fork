@@ -1,5 +1,6 @@
 package com.drmangotea.tfmg.content.engines.types;
 
+import com.drmangotea.tfmg.TFMG;
 import com.drmangotea.tfmg.base.TFMGUtils;
 import com.drmangotea.tfmg.content.engines.base.AbstractEngineBlockEntity;
 import com.drmangotea.tfmg.content.engines.base.EngineBlock;
@@ -218,8 +219,19 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
         // Prevent the "free fuel" exploit: at a low enough fuel injection rate,
         // getFuelConsumption() can round down to 0 while the engine still spins.
         // Stall it instead of letting it run without consuming fuel.
-        if (rpm > 0 && getFuelConsumption() <= 0)
-            return false;
+        //
+        // Defensive: getFuelConsumption() -> efficiencyModifier() can depend on
+        // fuel-type data that isn't ready in every context this gets called from
+        // (see the hasLevel() guard in updateRotation() for the actual bug this
+        // was chasing - kept here too as cheap extra safety).
+        if (rpm > 0) {
+            try {
+                if (getFuelConsumption() <= 0)
+                    return false;
+            } catch (Exception e) {
+                TFMG.LOGGER.debug("canWork() fuel consumption check failed for engine at {}, skipping for this tick", getBlockPos(), e);
+            }
+        }
 
         return true;
     }
@@ -296,6 +308,17 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
     }
 
     public void updateRotation() {
+
+        // updateRotation() can be reached via tankUpdated(), which fires as a side
+        // effect of SmartFluidTank deserializing its NBT inside read() - i.e. this
+        // can run in the middle of chunk load, before this block entity has been
+        // attached to a level at all. canWork() (and the delegation branch below)
+        // touch `level`, so calling either while level is still null throws an NPE
+        // that aborts read() partway through and silently resets this block entity
+        // to defaults (losing controller/components/upgrade) without any obvious
+        // error. Bail out here instead - there's nothing meaningful to update yet.
+        if (!hasLevel())
+            return;
 
         if (!isController()) {
             if (level.getBlockEntity(controller) instanceof AbstractSmallEngineBlockEntity be)
