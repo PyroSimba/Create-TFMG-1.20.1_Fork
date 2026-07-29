@@ -353,7 +353,12 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
                     BlockPos pos = BlockPos.of(l);
                     if (level.getBlockEntity(pos) instanceof AbstractEngineBlockEntity be) {
                         be.rpm = 4000 * speedModifier() * fuelInjectionRate;
-                        be.torque = 15 * torqueModifier() * fuelInjectionRate * engineLength();
+                        // engineLength() only counts extension blocks (the controller's own
+                        // position gets wiped out of `engines` during connect()), so it must be
+                        // offset by 1 here just like getFuelConsumption() already does - otherwise
+                        // a single-block (length-1) engine computes torque * 0 and produces no SU
+                        // even though it's running and consuming fuel.
+                        be.torque = 15 * torqueModifier() * fuelInjectionRate * (engineLength() + 1);
                         be.updateGeneratedRotation();
                     }
                 });
