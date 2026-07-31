@@ -485,7 +485,7 @@ public class VatBlockEntity extends SmartBlockEntity implements IHaveGoggleInfor
                     }
                 }
                 if (handled)
-                    break;
+                    continue;
                 for (int i = 0; i < outputInventory.getSlots(); i++) {
                     ItemStack itemInSlot = outputInventory.getStackInSlot(i);
                     if (itemInSlot.isEmpty()) {
@@ -497,7 +497,7 @@ public class VatBlockEntity extends SmartBlockEntity implements IHaveGoggleInfor
             //item input
             if (recipe != null)
                 for (Ingredient ingredient : recipe.getIngredients()) {
-                    for (int i = 0; i < fluidHandler.getTanks(); i++) {
+                    for (int i = 0; i < itemHandler.getSlots(); i++) {
                         ItemStack stackInInv = itemHandler.getStackInSlot(i);
                         if (ingredient.test(new ItemStack(stackInInv.getItem(), 64))) {
                             stackInInv.setCount(stackInInv.getCount() - ingredient.getItems()[0].getCount());
@@ -1056,9 +1056,11 @@ public class VatBlockEntity extends SmartBlockEntity implements IHaveGoggleInfor
 
     public float getFillState() {
         IFluidHandler fluidHandler = this.getCapability(ForgeCapabilities.FLUID_HANDLER).orElse(null);
+        if (fluidHandler == null)
+            return 0;
         for (int i = 0; i < fluidHandler.getTanks(); i++)
             if (!fluidHandler.getFluidInTank(i).isEmpty())
-                return (float) fluidHandler.getFluidInTank(i).getAmount() / fluidHandler.getTankCapacity(0);
+                return (float) fluidHandler.getFluidInTank(i).getAmount() / fluidHandler.getTankCapacity(i);
 
         return 0;
 

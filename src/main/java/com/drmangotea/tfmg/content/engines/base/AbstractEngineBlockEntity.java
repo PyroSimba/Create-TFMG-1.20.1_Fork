@@ -272,7 +272,7 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
         super.read(compound, clientPacket);
 
         reverse = compound.getBoolean("Reverse");
-        signal = compound.getInt("Signal")+1;
+        signal = compound.getInt("Signal");
         if (hasEngineController())
             engineController = BlockPos.of(compound.getLong("EngineController"));
         fuelInjectionRate = compound.getFloat("RPM");

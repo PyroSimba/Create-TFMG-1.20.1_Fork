@@ -53,7 +53,7 @@ public class ElectricMotorBlockEntity extends KineticElectricBlockEntity {
         super.lazyTick();
         if(data.notEnoughtPower)
             setSpeed(0);
-        if(data.voltage>0)
+        if(data.voltage<=0)
             setSpeed(0);
     }
 

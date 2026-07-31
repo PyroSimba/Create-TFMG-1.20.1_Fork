@@ -404,18 +404,16 @@ public abstract class AbstractSmallEngineBlockEntity extends AbstractEngineBlock
             if (getControllerBE().hasEngineController()) {
 
                 if(getControllerBE().hasTwoShafts())
-
-
-                speed = switch (getControllerBE().shift) {
-                    case REVERSE -> speed * -0.3f;
-                    case NEUTRAL -> 0;
-                    case SHIFT_1 -> speed * 0.2f;
-                    case SHIFT_2 -> speed * 0.4f;
-                    case SHIFT_3 -> speed * 0.6f;
-                    case SHIFT_4 -> speed * 0.8f;
-                    case SHIFT_5 -> speed;
-                    case SHIFT_6 -> speed * 1.2f;
-                };
+                    speed = switch (getControllerBE().shift) {
+                        case REVERSE -> speed * -0.3f;
+                        case NEUTRAL -> 0;
+                        case SHIFT_1 -> speed * 0.2f;
+                        case SHIFT_2 -> speed * 0.4f;
+                        case SHIFT_3 -> speed * 0.6f;
+                        case SHIFT_4 -> speed * 0.8f;
+                        case SHIFT_5 -> speed;
+                        case SHIFT_6 -> speed * 1.2f;
+                    };
 
 
             }

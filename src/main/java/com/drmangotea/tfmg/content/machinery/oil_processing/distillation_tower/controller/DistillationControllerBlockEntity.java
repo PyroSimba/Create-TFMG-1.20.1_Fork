@@ -172,6 +172,8 @@ public class DistillationControllerBlockEntity extends SmartBlockEntity implemen
         List<Recipe<?>> list = RecipeFinder.get(getRecipeCacheKey(), level, r -> r instanceof DistillationRecipe);
         for (int i = 0; i < list.toArray().length; i++) {
             DistillationRecipe recipe = (DistillationRecipe) list.get(i);
+            if (recipe.getFluidIngredients().isEmpty())
+                continue;
             if (recipe.getFluidResults().toArray().length == getOutputs().toArray().length)
                 for (int y = 0; y < recipe.getFluidIngredients().get(0).getMatchingFluidStacks().toArray().length; y++)
                     if (tank.getFluid().getFluid() == recipe.getFluidIngredients().get(0).getMatchingFluidStacks().get(y).getFluid())
