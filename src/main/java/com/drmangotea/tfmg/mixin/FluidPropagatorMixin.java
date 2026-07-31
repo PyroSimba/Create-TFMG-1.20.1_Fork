@@ -36,6 +36,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public class FluidPropagatorMixin {
      */
     @Overwrite( remap = false)
     public static void propagateChangedPipe(LevelAccessor world, BlockPos pipePos, BlockState pipeState) {
-        List<Pair<Integer, BlockPos>> frontier = new ArrayList<>();
+        List<Pair<Integer, BlockPos>> frontier = new LinkedList<>();
         Set<BlockPos> visited = new HashSet<>();
         Set<Pair<PumpBlockEntity, Direction>> discoveredPumps = new HashSet<>();
 

@@ -7,8 +7,10 @@ import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ElectricalNetwork {
 
@@ -26,11 +28,10 @@ public class ElectricalNetwork {
     }
 
     public void add(IElectric be) {
-        List<Long> posList = new ArrayList<>();
-
-        members.forEach(member -> posList.add(member.getData().getId()));
-        if (posList.contains(be.getData().getId()))
-            return;
+        long id = be.getData().getId();
+        for (IElectric member : members)
+            if (member.getData().getId() == id)
+                return;
         members.add(be);
     }
 
@@ -82,8 +83,10 @@ public class ElectricalNetwork {
             }
         }
 
+        // current is identical for every member of the same network — compute once, O(n) instead of O(n²)
+        float networkCurrent = computeCurrent(members);
         for (IElectric member : members) {
-            member.getData().highestCurrent = getCableCurrent(member);
+            member.getData().highestCurrent = networkCurrent;
 
             member.updateNearbyNetworks(member);
             if(member instanceof ElectricDiodeBlockEntity be) {
@@ -121,22 +124,19 @@ public class ElectricalNetwork {
 
 
     public static float getCableCurrent(IElectric be) {
+        return computeCurrent(be.getOrCreateElectricNetwork().members);
+    }
 
+    private static float computeCurrent(List<IElectric> members) {
         float current = 0;
-        List<Integer> groups = new ArrayList<>();
+        Set<Integer> groups = new HashSet<>();
 
-        for (IElectric member : be.getOrCreateElectricNetwork().members) {
-
+        for (IElectric member : members) {
             if (member.canBeInGroups())
-                if (!groups.contains(member.getData().group.id)) {
-                    groups.add(member.getData().group.id);
+                if (groups.add(member.getData().group.id))
                     if (member.resistance() != 0)
-
                         current += member.getData().voltage / member.resistance();
-                }
         }
-
-
         return current;
     }
 

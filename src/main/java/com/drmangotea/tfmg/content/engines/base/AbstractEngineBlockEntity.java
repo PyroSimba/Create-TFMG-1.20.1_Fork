@@ -112,9 +112,6 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
         int newSignal = level.getBestNeighborSignal(getBlockPos());
 
         signal = newSignal;
-
-
-        newSignal = Math.max(level.getBestNeighborSignal(getBlockPos()), newSignal);
         highestSignal = newSignal;
         fuelInjectionRate = highestSignal / 15f;
         updateRotation();

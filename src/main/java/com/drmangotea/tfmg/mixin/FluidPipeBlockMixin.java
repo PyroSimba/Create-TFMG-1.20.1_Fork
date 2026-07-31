@@ -276,10 +276,10 @@ public class FluidPipeBlockMixin extends PipeBlock implements SimpleWaterloggedB
 			return state;
 
 		BlockState prevState = state;
-		int prevStateSides = (int) Arrays.stream(Iterate.directions)
-			.map(PROPERTY_BY_DIRECTION::get)
-			.filter(prevState::getValue)
-			.count();
+		int prevStateSides = 0;
+		for (Direction d : Iterate.directions)
+			if (prevState.getValue(PROPERTY_BY_DIRECTION.get(d)))
+				prevStateSides++;
 
 
 		// Update sides that are not ignored

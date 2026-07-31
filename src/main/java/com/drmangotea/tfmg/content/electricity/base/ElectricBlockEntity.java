@@ -47,8 +47,8 @@ public class ElectricBlockEntity extends SmartBlockEntity implements IElectric, 
 
     @Override
     public ElectricalNetwork getOrCreateElectricNetwork() {
-        if (level.getBlockEntity(BlockPos.of(data.electricalNetworkId)) instanceof IElectric) {
-            return TFMG.NETWORK_MANAGER.getOrCreateNetworkFor((IElectric) level.getBlockEntity(BlockPos.of(data.electricalNetworkId)));
+        if (level.getBlockEntity(BlockPos.of(data.electricalNetworkId)) instanceof IElectric be) {
+            return TFMG.NETWORK_MANAGER.getOrCreateNetworkFor(be);
         } else {
             ElectricNetworkManager.networks.get(getLevel())
                     .remove(data.electricalNetworkId);

@@ -154,7 +154,7 @@ public class BlastStoveBlockEntity extends FluidTankBlockEntity implements IHave
 
         List<Recipe<?>> list = RecipeFinder.get(getRecipeCacheKey(), level, r->r instanceof HotBlastRecipe);
 
-        for(int i = 0; i < list.toArray().length;i++){
+        for(int i = 0; i < list.size();i++){
             HotBlastRecipe recipe = (HotBlastRecipe) list.get(i);
             if(recipe.getPrimaryIngredient().test(primaryInputInventory.getFluid())&&recipe.getSecondaryIngredient().test(secondaryInputInventory.getFluid()))
                             return recipe;

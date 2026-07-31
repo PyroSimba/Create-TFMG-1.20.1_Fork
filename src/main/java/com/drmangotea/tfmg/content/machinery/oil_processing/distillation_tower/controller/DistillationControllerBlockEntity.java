@@ -72,7 +72,7 @@ public class DistillationControllerBlockEntity extends SmartBlockEntity implemen
             return;
         ///
 
-        if (recipe == null || !recipe.matches(tank, outputs.toArray().length)) {
+        if (recipe == null || !recipe.matches(tank, outputs.size())) {
             DistillationRecipe recipe = getMatchingRecipes();
 
 
@@ -89,14 +89,14 @@ public class DistillationControllerBlockEntity extends SmartBlockEntity implemen
         if (recipe.getInputFluid().getRequiredAmount() * speedModifier > tank.getFluidAmount())
             return;
 
-        if (recipe.getFluidResults().toArray().length != getOutputs().toArray().length)
+        if (recipe.getFluidResults().size() != getOutputs().size())
             return;
         if (be.isController()) {
-            if (be.getHeight() < outputs.toArray().length * 2 || (be.width < 2 && outputs.toArray().length > 3))
+            if (be.getHeight() < outputs.size() * 2 || (be.width < 2 && outputs.size() > 3))
                 return;
         } else {
             if (be.getControllerBE() != null)
-                if (be.getControllerBE().getHeight() < outputs.toArray().length * 2 || be.getControllerBE().width < 2)
+                if (be.getControllerBE().getHeight() < outputs.size() * 2 || be.getControllerBE().width < 2)
                     return;
         }
 
@@ -148,12 +148,12 @@ public class DistillationControllerBlockEntity extends SmartBlockEntity implemen
                 CreateLang.translate("goggles.distillation_tower.level", be.activeHeat)
                         .style(ChatFormatting.RED)
                         .forGoggles(tooltip, 1);
-            if (getOutputs().toArray().length > 0) {
-                CreateLang.translate("goggles.distillation_tower.found_outputs", getOutputs().toArray().length)
+            if (getOutputs().size() > 0) {
+                CreateLang.translate("goggles.distillation_tower.found_outputs", getOutputs().size())
                         .style(ChatFormatting.GOLD)
                         .forGoggles(tooltip, 1);
             } else
-                CreateLang.translate("goggles.distillation_tower.found_outputs", getOutputs().toArray().length)
+                CreateLang.translate("goggles.distillation_tower.found_outputs", getOutputs().size())
                         .style(ChatFormatting.RED)
                         .forGoggles(tooltip, 1);
 
@@ -170,12 +170,12 @@ public class DistillationControllerBlockEntity extends SmartBlockEntity implemen
 
     protected DistillationRecipe getMatchingRecipes() {
         List<Recipe<?>> list = RecipeFinder.get(getRecipeCacheKey(), level, r -> r instanceof DistillationRecipe);
-        for (int i = 0; i < list.toArray().length; i++) {
+        for (int i = 0; i < list.size(); i++) {
             DistillationRecipe recipe = (DistillationRecipe) list.get(i);
             if (recipe.getFluidIngredients().isEmpty())
                 continue;
-            if (recipe.getFluidResults().toArray().length == getOutputs().toArray().length)
-                for (int y = 0; y < recipe.getFluidIngredients().get(0).getMatchingFluidStacks().toArray().length; y++)
+            if (recipe.getFluidResults().size() == getOutputs().size())
+                for (int y = 0; y < recipe.getFluidIngredients().get(0).getMatchingFluidStacks().size(); y++)
                     if (tank.getFluid().getFluid() == recipe.getFluidIngredients().get(0).getMatchingFluidStacks().get(y).getFluid())
                         if (tank.getFluidAmount() >= recipe.getFluidIngredients().get(0).getRequiredAmount())
                             return recipe;
