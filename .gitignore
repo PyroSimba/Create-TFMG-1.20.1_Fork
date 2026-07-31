@@ -7,3 +7,5 @@
 /.vscode/
 /build/classes/java/main/
 /src/generated/resources/.cache/
+run/
+tests/result.json

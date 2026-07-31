@@ -1,0 +1,26 @@
+[
+  {"name": "sanity_list", "command": "list", "expect_response": "players online"},
+  {"name": "forceload_spawn", "command": "forceload add 0 0", "expect_response": "marked|already"},
+  {"name": "clear_area", "command": "fill -5 -60 -5 5 -50 5 minecraft:air", "expect_response": null, "delay": 1},
+
+  {"name": "place_electric_motor", "command": "setblock 0 -60 0 tfmg:electric_motor", "expect_response": "Changed the block", "delay": 2},
+  {"name": "motor_nbt_readable", "command": "data get block 0 -60 0", "expect_response": "block data"},
+  {"name": "motor_unpowered_speed_zero", "command": "data get block 0 -60 0 Speed", "expect_response": "0", "delay": 1},
+
+  {"name": "place_cable_connector_a", "command": "setblock 2 -60 0 tfmg:cable_connector", "expect_response": "Changed the block", "delay": 1},
+  {"name": "place_cable_connector_b", "command": "setblock 3 -60 0 tfmg:cable_connector", "expect_response": "Changed the block", "delay": 2},
+
+  {"name": "place_steel_vat", "command": "setblock 0 -60 3 tfmg:steel_chemical_vat", "expect_response": "Changed the block", "delay": 2},
+  {"name": "vat_nbt_readable", "command": "data get block 0 -60 3", "expect_response": "block data"},
+
+  {"name": "place_turbine_engine", "command": "setblock 3 -60 3 tfmg:turbine_engine", "expect_response": "Changed the block", "delay": 2},
+  {"name": "engine_power_with_redstone", "command": "setblock 4 -60 3 minecraft:redstone_block", "expect_response": "Changed the block", "delay": 2},
+  {"name": "engine_signal_is_15", "command": "data get block 3 -60 3 Signal", "expect_response": "data: 15\\b", "delay": 1},
+
+  {"name": "restart_for_signal_persistence", "action": "restart"},
+
+  {"name": "engine_signal_stable_after_reload", "command": "data get block 3 -60 3 Signal", "expect_response": "data: 15\\b", "delay": 2},
+
+  {"name": "cleanup", "command": "fill -5 -60 -5 5 -50 5 minecraft:air", "expect_response": null, "delay": 2},
+  {"name": "final_no_exceptions", "command": "list", "expect_response": "players online", "delay": 2}
+]
