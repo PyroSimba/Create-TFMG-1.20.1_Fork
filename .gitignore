@@ -9,3 +9,4 @@
 /src/generated/resources/.cache/
 run/
 tests/result.json
+__pycache__/
