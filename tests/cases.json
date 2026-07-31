@@ -21,6 +21,13 @@
 
   {"name": "engine_signal_stable_after_reload", "command": "data get block 3 -60 3 Signal", "expect_response": "data: 15\\b", "delay": 2},
 
+  {"name": "place_coke_oven", "command": "setblock -3 -60 0 tfmg:coke_oven", "expect_response": "Changed the block", "delay": 2},
+  {"name": "coke_oven_nbt_readable", "command": "data get block -3 -60 0", "expect_response": "block data"},
+  {"name": "place_blast_furnace_output", "command": "setblock -3 -60 3 tfmg:blast_furnace_output", "expect_response": "Changed the block", "delay": 2},
+  {"name": "blast_furnace_nbt_readable", "command": "data get block -3 -60 3", "expect_response": "block data"},
+  {"name": "place_regular_engine", "command": "setblock 0 -60 -3 tfmg:regular_engine", "expect_response": "Changed the block", "delay": 2},
+  {"name": "regular_engine_ticks_clean", "command": "data get block 0 -60 -3", "expect_response": "block data", "delay": 2},
+
   {"name": "cleanup", "command": "fill -5 -60 -5 5 -50 5 minecraft:air", "expect_response": null, "delay": 2},
   {"name": "final_no_exceptions", "command": "list", "expect_response": "players online", "delay": 2}
 ]

@@ -199,7 +199,15 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
     public abstract String engineId();
 
 
+    private FuelType cachedFuelType;
+    private Fluid cachedFuelFluid;
+
     public FuelType getFuelType() {
+        // called several times per tick; cache keyed on the tank's fluid
+        // ponytail: fuel tag contents only change on datapack reload, stale cache clears on next fluid change
+        Fluid currentFluid = fuelTank.getFluid().getFluid();
+        if (cachedFuelType != null && cachedFuelFluid == currentFluid)
+            return cachedFuelType;
 
         AtomicReference<FuelType> matchingType = new AtomicReference<>(BaseFuelTypes.FALLBACK);
 
@@ -211,7 +219,9 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
             }
 
         });
-        return matchingType.get();
+        cachedFuelFluid = currentFluid;
+        cachedFuelType = matchingType.get();
+        return cachedFuelType;
     }
 
     public void refreshCapability() {

@@ -114,22 +114,22 @@ public class RegularEngineBlockEntity extends AbstractSmallEngineBlockEntity {
         return supportedFuels;
     }
 
+    private boolean cachedAllPistons;
+    private long pistonCheckTick = Long.MIN_VALUE;
+
     @Override
     public boolean canWork() {
 
 
         if (level.getBlockEntity(controller) instanceof RegularEngineBlockEntity controller) {
 
-            for (Long position : controller.getAllEngines()) {
-
-                if (level.getBlockEntity(BlockPos.of(position)) instanceof RegularEngineBlockEntity be) {
-                    for (int i = 0; i < be.pistonInventory.getSlots(); i++) {
-                        if (be.pistonInventory.getItem(i).isEmpty()) {
-                            return false;
-                        }
-                    }
-                }
+            // piston scan walks every engine block + slot; re-check at most twice a second
+            if (level.getGameTime() - controller.pistonCheckTick >= 10) {
+                controller.pistonCheckTick = level.getGameTime();
+                controller.cachedAllPistons = controller.hasAllPistons();
             }
+            if (!controller.cachedAllPistons)
+                return false;
             return super.canWork();
         }
         return false;

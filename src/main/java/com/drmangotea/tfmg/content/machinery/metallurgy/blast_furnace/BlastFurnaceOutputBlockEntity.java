@@ -44,6 +44,7 @@ import net.minecraftforge.items.wrapper.RecipeWrapper;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import net.minecraft.world.item.Item;
 import java.util.Optional;
 import java.util.Random;
 
@@ -68,6 +69,10 @@ public class BlastFurnaceOutputBlockEntity extends SmartBlockEntity implements I
     public LerpedFloat coalCokeHeight = LerpedFloat.linear();
     boolean isReinforced = false;
     boolean isActive = false;
+    private IndustrialBlastingRecipe cachedRecipe;
+    private Item cachedRecipeInput;
+    private int cachedSize = -1;
+    private long sizeCacheTick = Long.MIN_VALUE;
 
 
     public BlastFurnaceOutputBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -258,7 +263,14 @@ public class BlastFurnaceOutputBlockEntity extends SmartBlockEntity implements I
         if (getSize() < 3)
             return;
 
-        Optional<IndustrialBlastingRecipe> optionalRecipe = TFMGRecipeTypes.INDUSTRIAL_BLASTING.find(new RecipeWrapper(inputInventory), level);
+        // recipe keyed on the single input slot's item; re-find only when it changes
+        Item input = inputInventory.getStackInSlot(0).getItem();
+        if (cachedRecipeInput != input) {
+            Optional<IndustrialBlastingRecipe> found = TFMGRecipeTypes.INDUSTRIAL_BLASTING.find(new RecipeWrapper(inputInventory), level);
+            cachedRecipe = found.orElse(null);
+            cachedRecipeInput = input;
+        }
+        Optional<IndustrialBlastingRecipe> optionalRecipe = Optional.ofNullable(cachedRecipe);
 
         if (fuel <= 0 && !fuelInventory.getItem(0).isEmpty()) {
             ItemStack fuelStack = fuelInventory.getItem(0);
@@ -335,7 +347,8 @@ public class BlastFurnaceOutputBlockEntity extends SmartBlockEntity implements I
                 }
                 if (level.isClientSide())
                     makeParticles();
-                hurtEntities();
+                if (timer % 5 == 0)  // entity query is expensive; hurt() has invuln frames anyway
+                    hurtEntities();
                 timer--;
                 fuelConsumeTimer++;
 
@@ -489,6 +502,10 @@ public class BlastFurnaceOutputBlockEntity extends SmartBlockEntity implements I
         if (this.isRemoved()) {  // Critical check
             return 0;  // Skip validation if block entity is destroyed
         }
+        // ponytail: full structure scan is expensive and was called every tick + every frame;
+        // cache for 10 ticks, structure edits show up within half a second
+        if (cachedSize >= 0 && level != null && level.getGameTime() - sizeCacheTick < 10)
+            return cachedSize;
         // Create validator and validate the furnace structure
         BlastFurnaceValidator validator = new BlastFurnaceValidator(getBlockPos(), level);
         BlastFurnaceValidator.ValidationResult result = validator.validateFurnace();
@@ -497,7 +514,10 @@ public class BlastFurnaceOutputBlockEntity extends SmartBlockEntity implements I
         this.isReinforced = result.isReinforced();
         this.tuyerePos = validator.getTuyerePos();
 
-        return result.height();
+        cachedSize = result.height();
+        if (level != null)
+            sizeCacheTick = level.getGameTime();
+        return cachedSize;
     }
 
     @Nonnull

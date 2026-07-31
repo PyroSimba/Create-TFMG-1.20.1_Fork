@@ -52,6 +52,7 @@ public class CokeOvenBlockEntity extends SmartBlockEntity implements IHaveGoggle
     protected LazyOptional<IFluidHandler> secondaryFluidCapability;
     public LazyOptional<IItemHandlerModifiable> itemCapability;
     int timer = -1;
+    private CokingRecipe cachedRecipe;
     public LerpedFloat doorAngle = LerpedFloat.angular();
     public boolean createNextTick;
     public BlockPos controller = getBlockPos();
@@ -126,13 +127,18 @@ public class CokeOvenBlockEntity extends SmartBlockEntity implements IHaveGoggle
         if (inventory.isEmpty() || timer == -1)
             return;
 
-        Optional<CokingRecipe> optional = TFMGRecipeTypes.COKING.find(new RecipeWrapper(inventory), level);
+        // recipe lookup is expensive; only re-find when the cached one no longer matches the input
+        CokingRecipe recipe = cachedRecipe;
+        if (recipe == null || !recipe.getIngredients().get(0).test(inventory.getItem(0))) {
+            Optional<CokingRecipe> optional = TFMGRecipeTypes.COKING.find(new RecipeWrapper(inventory), level);
 
-        if (optional.isEmpty()) {
-            timer = -1;
-            return;
+            if (optional.isEmpty()) {
+                timer = -1;
+                cachedRecipe = null;
+                return;
+            }
+            recipe = cachedRecipe = optional.get();
         }
-        CokingRecipe recipe = optional.get();
 
         if (timer == 0) {
             timer = -1;
