@@ -219,9 +219,13 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
             }
 
         });
-        cachedFuelFluid = currentFluid;
-        cachedFuelType = matchingType.get();
-        return cachedFuelType;
+        // never cache FALLBACK: during world load this can run before the fuel
+        // type map / fluid tags are ready, and a cached FALLBACK sticks forever
+        if (matchingType.get() != BaseFuelTypes.FALLBACK) {
+            cachedFuelFluid = currentFluid;
+            cachedFuelType = matchingType.get();
+        }
+        return matchingType.get();
     }
 
     public void refreshCapability() {
@@ -279,7 +283,9 @@ public abstract class AbstractEngineBlockEntity extends KineticElectricBlockEnti
         super.read(compound, clientPacket);
 
         reverse = compound.getBoolean("Reverse");
-        signal = compound.getInt("Signal");
+        // +1 is deliberate upstream behavior: forces signal != real power after
+        // load so the first neighbourChanged() re-syncs injection rate
+        signal = compound.getInt("Signal")+1;
         if (hasEngineController())
             engineController = BlockPos.of(compound.getLong("EngineController"));
         fuelInjectionRate = compound.getFloat("RPM");
