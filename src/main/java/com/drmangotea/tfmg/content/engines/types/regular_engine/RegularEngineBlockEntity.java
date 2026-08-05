@@ -81,6 +81,11 @@ public class RegularEngineBlockEntity extends AbstractSmallEngineBlockEntity {
         updateRotation();
         sendData();
         setChanged();
+
+        // invalidate cached piston-completeness so canWork() re-samples immediately
+        if (level.getBlockEntity(controller) instanceof RegularEngineBlockEntity controllerBe) {
+            controllerBe.pistonCheckTick = Long.MIN_VALUE;
+        }
     }
 
     public void refreshFuels() {
