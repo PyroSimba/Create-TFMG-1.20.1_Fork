@@ -1,14 +1,13 @@
 package com.drmangotea.tfmg.content.machinery.oil_processing;
 
 import com.drmangotea.tfmg.TFMG;
-import com.drmangotea.tfmg.registry.TFMGBlocks;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 public class OilHammerItem extends Item {
@@ -16,29 +15,28 @@ public class OilHammerItem extends Item {
         super(p_41383_);
     }
 
-
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
+        ChunkPos chunkPos = new ChunkPos(context.getClickedPos());
 
-        for(int i = 0;i<300;i++){
-            BlockPos posToCheck = pos.below(i);
-            if(level.getBlockState(posToCheck).is(TFMGBlocks.OIL_DEPOSIT.get())){
-                if(TFMG.DEPOSITS.getReservoirFor(posToCheck.asLong())==null)
-                    return InteractionResult.SUCCESS;
-                int oilReserves = TFMG.DEPOSITS.getReservoirFor(posToCheck.asLong()).oilReserves;
-
-                if (level.isClientSide&&player!=null)
-                    player.displayClientMessage(CreateLang.translateDirect("oil_hammer.reserves", oilReserves)
-                            .withStyle(ChatFormatting.YELLOW), true);
-
-                return InteractionResult.SUCCESS;
-            }
+        if (!TFMG.DEPOSITS.hasOil(level, chunkPos)) {
+            if (level.isClientSide && player != null)
+                player.displayClientMessage(CreateLang.translateDirect("oil_hammer.no_deposit")
+                        .withStyle(ChatFormatting.RED), true);
+            return InteractionResult.SUCCESS;
         }
 
-
+        int remaining = TFMG.DEPOSITS.getRemaining(level, chunkPos);
+        if (level.isClientSide && player != null) {
+            if (remaining == Integer.MAX_VALUE)
+                player.displayClientMessage(CreateLang.translateDirect("oil_hammer.reserves_infinite")
+                        .withStyle(ChatFormatting.YELLOW), true);
+            else
+                player.displayClientMessage(CreateLang.translateDirect("oil_hammer.reserves", remaining)
+                        .withStyle(ChatFormatting.YELLOW), true);
+        }
 
         return InteractionResult.SUCCESS;
     }

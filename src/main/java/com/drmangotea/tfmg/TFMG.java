@@ -11,7 +11,7 @@ import com.drmangotea.tfmg.content.decoration.pipes.TFMGPipes;
 import com.drmangotea.tfmg.content.electricity.base.ElectricNetworkManager;
 import com.drmangotea.tfmg.content.engines.fuels.BaseFuelTypes;
 import com.drmangotea.tfmg.content.items.weapons.explosives.thermite_grenades.fire.TFMGColoredFires;
-import com.drmangotea.tfmg.content.machinery.oil_processing.pumpjack.pumpjack.base.TestSavedDataManager;
+import com.drmangotea.tfmg.content.machinery.oil_processing.pumpjack.pumpjack.base.DepositManager;
 import com.drmangotea.tfmg.datagen.TFMGDatagen;
 import com.drmangotea.tfmg.registry.TFMGBlockEntities;
 import com.drmangotea.tfmg.registry.TFMGBlocks;
@@ -54,7 +54,6 @@ import org.slf4j.Logger;
 
 import static net.createmod.catnip.lang.FontHelper.styleFromColor;
 
-
 @SuppressWarnings("removal")
 @Mod(TFMG.MOD_ID)
 public class TFMG {
@@ -63,19 +62,20 @@ public class TFMG {
     public static final ElectricNetworkManager NETWORK_MANAGER = new ElectricNetworkManager();
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final TestSavedDataManager DEPOSITS = new TestSavedDataManager();
-
-
+    public static final DepositManager DEPOSITS = new DepositManager();
 
     public static final TFMGRegistrate REGISTRATE = TFMGRegistrate.create();
 
-    public static final FontHelper.Palette TFMG_PALETTE = new FontHelper.Palette(styleFromColor(0x4c5155), styleFromColor(0x838c8a));
+    public static final FontHelper.Palette TFMG_PALETTE = new FontHelper.Palette(styleFromColor(0x4c5155),
+            styleFromColor(0x838c8a));
 
     static {
-        REGISTRATE.setTooltipModifierFactory((item) -> (new ItemDescription.Modifier(item, TFMG_PALETTE)).andThen(TooltipModifier.mapNull(KineticStats.create(item))));
-        //.andThen(TooltipModifier.mapNull(CableTypeStats.create(item))) (save this for whenever the fuck I figure out what resistivity is meant to do)
+        REGISTRATE.setTooltipModifierFactory((item) -> (new ItemDescription.Modifier(item, TFMG_PALETTE))
+                .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
+        // .andThen(TooltipModifier.mapNull(CableTypeStats.create(item)))
+        // (save this for whenever the fuck I figure out what resistivity is meant to
+        // do)
     }
-
 
     public TFMG() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -158,7 +158,6 @@ public class TFMG {
     public void onRegister(final RegisterEvent event) {
         TFMGContraptions.prepare();
     }
-
 
     public static ResourceLocation asResource(String path) {
         return new ResourceLocation(MOD_ID, path);

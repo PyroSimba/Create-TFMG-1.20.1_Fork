@@ -16,8 +16,7 @@ import net.minecraftforge.common.world.ForgeBiomeModifiers;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class TFMGBiomeModifiers {
-    public static final ResourceKey<BiomeModifier>
-            OIL_DEPOSIT = key("oil_deposit"),
+    public static final ResourceKey<BiomeModifier> OIL_DEPOSIT = key("oil_deposit"),
             OIL_WELL = key("oil_well"),
             LEAD_ORE = key("lead_ore"),
             NICKEL_ORE = key("nickel_ore"),
@@ -34,23 +33,15 @@ public class TFMGBiomeModifiers {
         HolderSet<Biome> isOverworld = biomeLookup.getOrThrow(BiomeTags.IS_OVERWORLD);
         HolderSet<Biome> isNether = biomeLookup.getOrThrow(BiomeTags.IS_NETHER);
 
-
-        HolderSet<Biome> isDesert = biomeLookup.getOrThrow(BiomeTags.HAS_DESERT_PYRAMID);
         HolderGetter<PlacedFeature> featureLookup = ctx.lookup(Registries.PLACED_FEATURE);
-
-        Holder<PlacedFeature> oilDeposit = featureLookup.getOrThrow(TFMGPlacedFeatures.OIL_DEPOSIT);
-        Holder<PlacedFeature> oilWell = featureLookup.getOrThrow(TFMGPlacedFeatures.OIL_WELL);
 
         Holder<PlacedFeature> leadOre = featureLookup.getOrThrow(TFMGPlacedFeatures.LEAD_ORE);
         Holder<PlacedFeature> nickelOre = featureLookup.getOrThrow(TFMGPlacedFeatures.NICKEL_ORE);
         Holder<PlacedFeature> lithiumOre = featureLookup.getOrThrow(TFMGPlacedFeatures.LITHIUM_ORE);
-        Holder<PlacedFeature> striatedOresOverworld = featureLookup.getOrThrow(TFMGPlacedFeatures.TFMG_STRIATED_ORES_OVERWORLD);
-        Holder<PlacedFeature> striatedOresNether = featureLookup.getOrThrow(TFMGPlacedFeatures.TFMG_STRIATED_ORES_NETHER);
-
-
-        ctx.register(OIL_DEPOSIT,addOre(isOverworld,oilDeposit));
-
-        ctx.register(OIL_WELL,addOilWell(isDesert,oilWell));
+        Holder<PlacedFeature> striatedOresOverworld = featureLookup
+                .getOrThrow(TFMGPlacedFeatures.TFMG_STRIATED_ORES_OVERWORLD);
+        Holder<PlacedFeature> striatedOresNether = featureLookup
+                .getOrThrow(TFMGPlacedFeatures.TFMG_STRIATED_ORES_NETHER);
 
         ctx.register(LEAD_ORE, addOre(isOverworld, leadOre));
         ctx.register(NICKEL_ORE, addOre(isOverworld, nickelOre));
@@ -59,13 +50,10 @@ public class TFMGBiomeModifiers {
         ctx.register(TFMG_STRIATED_ORES_NETHER, addOre(isNether, striatedOresNether));
     }
 
-    private static ForgeBiomeModifiers.AddFeaturesBiomeModifier addOre(HolderSet<Biome> biomes, Holder<PlacedFeature> feature) {
-        return new ForgeBiomeModifiers.AddFeaturesBiomeModifier(biomes, HolderSet.direct(feature), GenerationStep.Decoration.UNDERGROUND_ORES);
-    }
-
-
-    private static ForgeBiomeModifiers.AddFeaturesBiomeModifier addOilWell(HolderSet<Biome> biomes, Holder<PlacedFeature> feature) {
-        return new ForgeBiomeModifiers.AddFeaturesBiomeModifier(biomes, HolderSet.direct(feature), GenerationStep.Decoration.FLUID_SPRINGS);
+    private static ForgeBiomeModifiers.AddFeaturesBiomeModifier addOre(HolderSet<Biome> biomes,
+            Holder<PlacedFeature> feature) {
+        return new ForgeBiomeModifiers.AddFeaturesBiomeModifier(biomes, HolderSet.direct(feature),
+                GenerationStep.Decoration.UNDERGROUND_ORES);
     }
 
 }
