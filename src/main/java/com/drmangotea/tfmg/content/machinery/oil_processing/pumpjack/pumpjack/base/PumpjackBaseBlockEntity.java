@@ -2,9 +2,12 @@ package com.drmangotea.tfmg.content.machinery.oil_processing.pumpjack.pumpjack.b
 
 import com.drmangotea.tfmg.TFMG;
 import com.drmangotea.tfmg.base.TFMGUtils;
+import com.drmangotea.tfmg.config.TFMGConfigs;
 import com.drmangotea.tfmg.content.machinery.oil_processing.pumpjack.pumpjack.crank.PumpjackCrankBlockEntity;
 import com.drmangotea.tfmg.content.machinery.oil_processing.pumpjack.pumpjack.hammer.PumpjackBlockEntity;
+import com.drmangotea.tfmg.registry.TFMGBlocks;
 import com.drmangotea.tfmg.registry.TFMGFluids;
+import com.drmangotea.tfmg.registry.TFMGTags;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -15,7 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
@@ -31,13 +34,12 @@ import java.util.List;
 public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
     public PumpjackBlockEntity controllerHammer;
     public boolean isRunning = false;
+    int depositCheckTimer = 0;
     public int miningRate = 0;
     protected LazyOptional<IFluidHandler> fluidCapability;
     public FluidTank tank;
+    public BlockPos deposit;
 
-    /** Null when pumpjack's chunk has no oil. */
-    public ChunkPos depositChunk;
-    private boolean depositChecked = false;
 
     public PumpjackBaseBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -45,9 +47,11 @@ public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGo
         fluidCapability = LazyOptional.of(() -> tank);
     }
 
+
     @Override
     public void tick() {
         super.tick();
+
 
         if (controllerHammer != null)
             if (!(level.getBlockEntity(controllerHammer.getBlockPos()) instanceof PumpjackBlockEntity))
@@ -65,20 +69,17 @@ public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGo
         isRunning = controllerHammer.isRunning();
 
         if (!isRunning) {
+            deposit = null;
+            controllerHammer = null;
             miningRate = 0;
             return;
         }
-
-        // Chunk oil is deterministic (seed + chunk pos), so this only needs to run once
-        // per pumpjack rather than on a recurring timer like the old block-scanning
-        // version did.
-        // Deferred to first tick rather than the constructor/read, since level isn't
-        // guaranteed attached yet during deserialization.
-        if (!depositChecked) {
-            depositChecked = true;
+        depositCheckTimer++;
+        if (depositCheckTimer > 50) {
+            depositCheckTimer = 0;
             findDeposit();
-        }
 
+        }
         PumpjackCrankBlockEntity crank = null;
         if (controllerHammer.crank != null)
             crank = controllerHammer.crank;
@@ -87,34 +88,74 @@ public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGo
             return;
         miningRate = (int) Math.abs(crank.getMachineInputSpeed() * (crank.heightModifier));
         process();
+
+
+    }
+
+    @Override
+    public void lazyTick() {
+        super.lazyTick();
+        // TFMG.DEPOSITS.removeEmptyDeposits();
     }
 
     public void findDeposit() {
-        ChunkPos chunkPos = new ChunkPos(this.getBlockPos());
-        depositChunk = TFMG.DEPOSITS.hasOil(level, chunkPos) ? chunkPos : null;
+        for (int i = 0; i < this.getBlockPos().getY() + 64; i++) {
+            BlockPos checkedPos = new BlockPos(this.getBlockPos().getX(), (this.getBlockPos().getY() - 1) - i, this.getBlockPos().getZ());
+            if (level.getBlockState(new BlockPos(checkedPos)).is(TFMGBlocks.OIL_DEPOSIT.get())) {
+                deposit = checkedPos;
+                return;
+            }
+            if (!(level.getBlockState(new BlockPos(checkedPos)).is(TFMGTags.TFMGBlockTags.INDUSTRIAL_PIPE.tag))) {
+                deposit = null;
+                return;
+            }
+        }
+        deposit = null;
     }
 
     public void process() {
-        if (depositChunk == null)
+        if (deposit == null)
             return;
+
+
+        //if (TFMG.DEPOSITS.depositData == null) {
+        //    return;
+        //}
+        if (!level.isClientSide)
+            if (!TFMG.DEPOSITS.containsDeposit(deposit.asLong())) {
+                TFMG.DEPOSITS.addDeposit(level, deposit.asLong());
+                TFMG.DEPOSITS.markDirty();
+                sendData();
+            }
+
 
         if (tank.getFluidAmount() + miningRate > tank.getCapacity())
             return;
-
-        int remaining = TFMG.DEPOSITS.getRemaining(level, depositChunk);
-        if (remaining <= 0)
-            return;
-
-        int amountToPump = Math.min(miningRate, remaining);
-        int amountPumped = tank.fill(new FluidStack(TFMGFluids.CRUDE_OIL.getSource(), amountToPump),
-                IFluidHandler.FluidAction.EXECUTE);
+        int amountPumped = tank.fill(new FluidStack(TFMGFluids.CRUDE_OIL.getSource(), miningRate), IFluidHandler.FluidAction.EXECUTE);
         sendData();
 
         if (amountPumped == 0)
             return;
 
-        if (!level.isClientSide)
-            TFMG.DEPOSITS.consume(level, depositChunk, amountPumped);
+        if (TFMGConfigs.common().worldgen.infiniteDeposits.get())
+            return;
+
+        RandomSource randomSource = level.getRandom();
+        //fix
+        //if (randomSource.nextInt(((900000) / amountPumped) + 1) == 0) {
+//
+        //    TFMG.DEPOSITS.getReservoirFor(deposit.asLong()).oilReserves--;
+        //    //  TFMG.DEPOSITS.depositData.setDirty();
+        //    if (TFMG.DEPOSITS.getReservoirFor(deposit.asLong()).oilReserves <= 0) {
+        //        TFMG.LOGGER.debug("EPIC REMOVAL");
+        //        TFMG.DEPOSITS.removeDeposit(deposit.asLong());
+        //        level.setBlock(deposit, Blocks.BEDROCK.defaultBlockState(), 3);
+        //        deposit = null;
+        //        findDeposit();
+        //    }
+        //}
+
+
     }
 
     public void setControllerHammer(PumpjackBlockEntity controllerHammer) {
@@ -144,7 +185,7 @@ public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGo
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         CreateLang.translate("goggles.pumpjack_info")
                 .forGoggles(tooltip);
-        if (depositChunk == null) {
+        if (deposit == null) {
             CreateLang.translate("goggles.zero")
                     .style(ChatFormatting.DARK_RED)
                     .forGoggles(tooltip, 1);
@@ -162,9 +203,11 @@ public class PumpjackBaseBlockEntity extends SmartBlockEntity implements IHaveGo
 
     @Override
     public void write(CompoundTag compound, boolean clientPacket) {
+
         compound.put("TankContent", tank.writeToNBT(new CompoundTag()));
         super.write(compound, clientPacket);
     }
+
 
     @Nonnull
     @Override
